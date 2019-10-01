@@ -1,45 +1,62 @@
-from flask import Flask,request, jsonify
-import sqlite3
+from flask import Flask,jsonify,request,render_template
 
 app = Flask(__name__)
 
+stores = [{
+    'name': 'My Store',
+    'items': [{'name':'my item', 'price': 15.99 }]
+}]
 
-@app.route('/')
-def greet():
-	return jsonify({'message':'This is a project to udertsand REST APIs with python'})
+#post /store data: {name :}
+@app.route('/store' , methods=['POST'])
+def create_store():
+  request_data = request.get_json()
+  new_store = {
+    'name':request_data['name'],
+    'items':[]
+  }
+  stores.append(new_store)
+  return jsonify(new_store)
+  
+
+#get /store/<name> data: {name :}
+@app.route('/store/<string:name>')
+def get_store(name):
+  for store in stores:
+    if store['name'] == name:
+          return jsonify(store)
+  return jsonify ({'message': 'store not found'})
 
 
-@app.route('/display_users')
-def display_users():
-	connection = sqlite3.connect('data.db')
-	cursor = connection.cursor()
-	query = "SELECT * FROM users"
-	result = cursor.execute(query)
-	items = []
-	for row in result:
-		items.append({'username': row[1], 'password': row[2]})
-	connection.close()
-	return jsonify({'items': items})
+#get /store
+@app.route('/store')
+def get_stores():
+  return jsonify({'stores': stores})
+ 
 
+#post /store/<name> data: {name :}
+@app.route('/store/<string:name>/item' , methods=['POST'])
+def create_item_in_store(name):
+  request_data = request.get_json()
+  for store in stores:
+    if store['name'] == name:
+        new_item = {
+            'name': request_data['name'],
+            'price': request_data['price']
+        }
+        store['items'].append(new_item)
+        return jsonify(new_item)
+  return jsonify ({'message' :'store not found'})
+ 
 
-@app.route('/adduser', methods = ['POST'])
-def add_user():
-	user_dict = request.get_json()
-	id_ = user_dict['ID']
-	username = user_dict['USERNAME']
-	password = user_dict['PASSWORD']
-	connection = sqlite3.connect('data.db')
-	cursor = connection.cursor()
-	query = "INSERT INTO users VALUES(?, ?, ?)"
-	cursor.execute(query, (id_, username, password))
-	connection.commit()
-	connection.close()
-	return jsonify({'message':'user added'})
+#get /store/<name>/item data: {name :}
+@app.route('/store/<string:name>/item')
+def get_item_in_store(name):
+  for store in stores:
+    if store['name'] == name:
+        return jsonify( {'items':store['items'] } )
+  return jsonify ({'message':'store not found'})
 
+ 
 
 app.run(port=5000)
-
-
-        
-
-
